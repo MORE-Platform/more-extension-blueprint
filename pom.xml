@@ -29,6 +29,7 @@
     <modules>
         <module>more-action-extension</module>
         <module>more-trigger-extension</module>
+        <module>more-observation-extension</module>
     </modules>
 
     <dependencies>

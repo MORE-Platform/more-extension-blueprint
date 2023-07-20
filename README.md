@@ -46,3 +46,8 @@ If you want to test the webhook locally we prepared a simple webserver, that est
 ## More Trigger Blueprint
 The More Trigger Blueprint can be found in the `more-trigger-extension` directory. It provides a periodic trigger, that 
 randomly selects a participant and triggers the actions of the interventions at every period.
+
+## More Observation Blueprint
+This Blueprint can be found in the `more-observation-extension` directory. The observation can be used to create and configure
+an observation for the `PushButton` observation. Note, this observation does not use any sensors but is a good starting point.
+The extension app can be found in [More APP - Blueprint Branch](https://github.com/MORE-Platform/more-app-multiplatform/tree/more-app-blueprint).
