@@ -8,7 +8,7 @@ The PeriodicTrigger allows to speficy trigger that selects a random participant 
 1. Install Java 17 and set as default
 2. Checkout the blueprint code
 3. Checkout the [Study Manager Backend](https://github.com/MORE-Platform/more-studymanager-backend)
-4. Install the `io.redlink.more:studymanager-core:1.0.0-SNAPSHOT`on your MavenLocal: Run `./mvnw clean install -Dmaven.install.skip=false -DskipTests` in the `more-studymanager-backend` directory.
+4. Install the `io.redlink.more:studymanager-core:1.0.0-SNAPSHOT`on your MavenLocal: Run `./mvnw clean install -D maven.install.skip=false -D skipTests` in the `more-studymanager-backend` directory.
 5. Build blueprints and install locally: Run `./mvnw clean install` in the `more-extension-blueprint` directory.
 
 ## Enable Blueprint Extension in Studymanager
