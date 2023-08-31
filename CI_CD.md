@@ -1,8 +1,9 @@
-#### Defining CI/CD for Building and Deploying Extension Blueprints using Github Packages:
+### Defining CI/CD for Building and Deploying Extension Blueprints using Github Packages:
 In order to establish a Continuous Integration and Continuous Deployment (CI/CD) process for building and deploying extension blueprints via Github Packages, 
 and since this project relies on the `io.redlink.more:studymanager-core` artifact as a necessary dependency. Thus, the initial task involves creating this dependency as a  standalone artifact, in github packages.
 The following steps need to be undertaken within the more-studymanager-backend code-base project:
-#####Step 1: Prepare Distribution Management
+
+##### Step 1: Prepare Distribution Management
 To make the studymanager-core project artifact available as a separate package, the distribution management configuration needs to be added to the pom.xml file of the studymanager-core project. Insert the following code snippet:
 ```xml
 <distributionManagement>
@@ -14,7 +15,7 @@ To make the studymanager-core project artifact available as a separate package, 
 </distributionManagement>
 ```
 Make sure to adjust the URL in the <url> tag according to the following pattern: https://maven.pkg.github.com/OWNER/REPOSITORY, where OWNER is the account name of the user or organization that owns the repository, and REPOSITORY is the name of the repository housing the project.
-#####Step 2: Modify studymanager-core/pom.xml
+##### Step 2: Modify studymanager-core/pom.xml
 The studymanager-core/pom.xml file inherits from the main pom file located in the parent folder. In this file, deployment of Maven plugins is skipped by default. To enable the necessary deployment configurations, follow these steps:
 1. Override the build element in the studymanager-core/pom.xml file.
 2. Set the skip attribute to false for the Maven Deploy Plugin.
@@ -36,7 +37,7 @@ The studymanager-core/pom.xml file inherits from the main pom file located in th
 </build>
 ```
 By making these changes, you ensure that the Maven Deploy Plugin is no longer skipped, allowing for the proper deployment of the artifact.
-#####Step 3: Configure Github Action
+##### Step 3: Configure Github Action
 Edit configuration file `compile-test.yml` under `$PROJECT_ROOT/.github/workflows/`
 The compile-and-Test job was edited and  `server-id`, `server-password`, `GITHUB_TOKEN_REF` were added.
 ```yaml
@@ -75,7 +76,7 @@ Compile-and-Test:
           path: "./studymanager/target/generated-sources/license/THIRD-PARTY.txt"
 ```
 
-#####Step 3: Create a Private Access Token
+##### Step 4: Create a Private Access Token
 You need an access token to write the package and also read other packages. You can use a personal access token (PAT) to authenticate to GitHub Packages or the GitHub API. When you create a personal access token, you can assign the token different scopes depending on your needs.
 You can generate a new personal access token under Profile/Settings/Developer settings/Personal access tokens.
 Select the write:packages scope.
