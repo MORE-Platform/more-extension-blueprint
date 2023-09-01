@@ -15,7 +15,7 @@ To make the studymanager-core project artifact available as a separate package, 
 </distributionManagement>
 ```
 Make sure to adjust the URL in the <url> tag according to the following pattern: https://maven.pkg.github.com/OWNER/REPOSITORY, where OWNER is the account name of the user or organization that owns the repository, and REPOSITORY is the name of the repository housing the project.
-#####Step 2: Modify studymanager-core/pom.xml
+##### Step 2: Modify studymanager-core/pom.xml
 The studymanager-core/pom.xml file inherits from the main pom file located in the parent folder. In this file, deployment of Maven plugins is skipped by default. To enable the necessary deployment configurations, follow these steps:
 1. Override the build element in the studymanager-core/pom.xml file.
 2. Set the skip attribute to false for the Maven Deploy Plugin.
