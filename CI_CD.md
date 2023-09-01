@@ -101,18 +101,18 @@ We can include it as a dependency in `more-extension-blueprint` project by the f
 To make all modules in `more-extension-blueprint` project available as a separate package, the distribution management configuration needs to be added to the pom.xml file of the `more-extension-blueprint` project. Insert the following code snippet:
 ```yaml
 <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>lbi-dhp-more-extension-blueprint</name>
-            <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
-        </repository>
+    <repository>
+        <id>github</id>
+        <name>lbi-dhp-more-extension-blueprint</name>
+        <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
+    </repository>
 </distributionManagement>
 ```
 Make sure to adjust the URL in the tag according to the following pattern: https://maven.pkg.github.com/OWNER/REPOSITORY, where OWNER is the account name of the user or organization that owns the repository, and REPOSITORY is the name of the repository housing the project.
 ### Step 3: Adjusting pom.xml for distribution management
 Using the `deploy` command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In my case I decided to enable the additional repository by using a Maven profile by adding `<Profiles>` to `pom.xml` parent file.
 ```yaml
- <profiles>
+<profiles>
     <profile>
         <id>github</id>
         <repositories>
