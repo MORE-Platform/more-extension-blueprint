@@ -10,7 +10,7 @@ To make the studymanager-core project artifact available as a separate package, 
     <repository>
         <id>github</id>
         <name>lbi-dhp-studymanager-core</name>
-        <url>https://maven.pkg.github.com/LBI-DHP/more-studymanager-backend</url>
+        <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
     </repository>
 </distributionManagement>
 ```
@@ -78,14 +78,105 @@ Compile-and-Test:
 GitHub provides a token that you can use to authenticate on behalf of GitHub Actions: GITHUB_TOKEN.
 GitHub automatically creates a GITHUB_TOKEN secret to use in your workflow and you can use it to authenticate in a workflow run.
 Now, when any change is pushed to master a new package is created and published to GitHub Packages.
+## Accessing and Installing the package
+Whenever the studymanager project is built, the `studymanager-core` artifact is automatically built as well.
+The artifact is available in the packages list of `more-studymanager-backend`:
+[io.redlink.more.studymanager-core ](https://github.com/MORE-Platform/more-studymanager-backend/packages/ "io.redlink.more.studymanager-core")
+By following these steps, we will use the `studymanager-core` artifact in `more-extension-blueprint` and then deploy the following artifacts to GitHub Packages:
+- `more-action-extension`
+- `more-trigger-extension`
+- `more-observation-extension`
+### Step 1: Add the project as a dependency on the pom.xml
+We can include it as a dependency in `more-extension-blueprint` project by the following elemnt.
 
-
+```xml
+<dependency>
+  <groupId>io.redlink.more</groupId>
+  <artifactId>studymanager-core</artifactId>
+  <version>LATEST</version>
+</dependency>
+```
+### Step 2: Prepare Distribution Management for all artifiacts
+To make all modules in `more-extension-blueprint` project available as a separate package, the distribution management configuration needs to be added to the pom.xml file of the `more-extension-blueprint` project. Insert the following code snippet:
+```yaml
+<distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>lbi-dhp-more-extension-blueprint</name>
+            <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
+        </repository>
+</distributionManagement>
+```
+Make sure to adjust the URL in the tag according to the following pattern: https://maven.pkg.github.com/OWNER/REPOSITORY, where OWNER is the account name of the user or organization that owns the repository, and REPOSITORY is the name of the repository housing the project.
+### Step 3: Adjusting pom.xml for distribution management
+Using the `deploy` command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In my case I decided to enable the additional repository by using a Maven profile by adding `<Profiles>` to `POM.xml` parent file.
+```yaml
+ <profiles>
+        <profile>
+            <id>github</id>
+            <repositories>
+                <repository>
+                    <id>github</id>
+                    <name>lbi-dhp-studymanager-core</name>
+                    <url>https://maven.pkg.github.com/LBI-DHP/more-studymanager-backend</url>
+                    <snapshots><enabled>true</enabled></snapshots>
+                    <releases><enabled>true</enabled></releases>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+```
 ### Step 4: Create a Private Access Token
 You need an access token to write the package and also read other packages. You can use a personal access token (PAT) to authenticate to GitHub Packages or the GitHub API. When you create a personal access token, you can assign the token different scopes depending on your needs.
-You can generate a new personal access token under Profile/Settings/Developer settings/Personal access tokens.
-Select the write:packages scope.
-[![write-packages](a "write-packages")](http://google.com "write-packages")
+You can generate a new personal access token under 
+[Profile/Settings/Developer settings/Personal access tokens](https://github.com/settings/tokens/new "Profile/Settings/Developer settings/Personal access tokens").
+Select the write:packages scope. Because we are going to use these token to deploy artifacts.
+
+![write-packeages](https://github.com/MORE-Platform/more-extension-blueprint/assets/107924035/4c8a1ac6-85e5-4c8d-a8c6-c2d5468b85a6)
+
 Copy the token value as you will need it in the next step.
 ### Step 5: Add secret key to the repository
 In `more-extension-blueprint` project repository you need to create a secret using the token generated in the previous step. Go to Settings/Secrets and create a new repository secret.
-[![secret-key](a "secret key")](http://google.com "secret-key")
+
+![secret](https://github.com/MORE-Platform/more-extension-blueprint/assets/107924035/484ee5e1-e034-4ef8-a707-a5d2b6f8bb5b)
+
+Set a Name (E.g. GH_PAT_FOR_ACTIONS_TOKEN) and paste the token under Value.
+### Step 6: Configure Github Action
+In `more-extension-blueprint` project, create a github action configuration file under $PROJECT_ROOT/.github/workflows/.
+Here is a the `compile-test.yaml` file:
+
+```yaml
+name: Test and Compile
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  Compile-and-Test:
+    name: Compile and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          server-id: github # value of repository/id field of the pom.xml          
+          server-password: GITHUB_TOKEN_REF # env variable name for GitHub Personal Access Token      
+      - name: Build and Deploy
+        run: ./mvnw -B -U clean deploy
+          -Pgithub package --file pom.xml
+        env:          
+          GITHUB_TOKEN_REF: ${{ secrets.GH_PAT_FOR_ACTIONS_TOKEN }}
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+
+```
