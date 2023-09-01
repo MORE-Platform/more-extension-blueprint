@@ -110,7 +110,7 @@ To make all modules in `more-extension-blueprint` project available as a separat
 ```
 Make sure to adjust the URL in the tag according to the following pattern: https://maven.pkg.github.com/OWNER/REPOSITORY, where OWNER is the account name of the user or organization that owns the repository, and REPOSITORY is the name of the repository housing the project.
 ### Step 3: Adjusting pom.xml for distribution management
-Using the `deploy` command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In my case I decided to enable the additional repository by using a Maven profile by adding `<Profiles>` to `POM.xml` parent file.
+Using the `deploy` command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In my case I decided to enable the additional repository by using a Maven profile by adding `<Profiles>` to `pom.xml` parent file.
 ```yaml
  <profiles>
     <profile>
@@ -119,7 +119,7 @@ Using the `deploy` command in CI/CD requires you to set up a new repository in t
             <repository>
                 <id>github</id>
                 <name>lbi-dhp-studymanager-core</name>
-                <url>https://maven.pkg.github.com/LBI-DHP/more-studymanager-backend</url>
+                <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
                 <snapshots><enabled>true</enabled></snapshots>
                 <releases><enabled>true</enabled></releases>
             </repository>
@@ -142,9 +142,26 @@ In `more-extension-blueprint` project repository you need to create a secret usi
 ![secret](https://github.com/MORE-Platform/more-extension-blueprint/assets/107924035/484ee5e1-e034-4ef8-a707-a5d2b6f8bb5b)
 
 Set a Name (E.g. GH_PAT_FOR_ACTIONS_TOKEN) and paste the token under Value.
+You have to add the personal access token to your Maven`s settings.xml in .m2 folder:
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <servers>
+        <server>
+            <id>github</id>
+            <username>your-username</username>
+            <password>your-personal-access-token</password>
+        </server>
+    </servers>
+</settings>
+```
+Locally, you can now publish a new Maven artifact into the GitHub Package Registry with
+`./mvnw -Pgithub deploy`
 ### Step 6: Configure Github Action
 In `more-extension-blueprint` project, create a github action configuration file under $PROJECT_ROOT/.github/workflows/.
-Here is a the `compile-test.yaml` file:
+Here is the `compile-test.yaml` file:
 
 ```yaml
 name: Test and Compile
@@ -180,4 +197,80 @@ jobs:
           name: Event File
           path: ${{ github.event_path }}
 
+```
+With this GitHub Actions build, all artifacts will be published and pop up in the repository`s dashboard.
+## Use artifacts in MORE Study Manager Backend project
+All the artifacts are now accessible on GitHub Packages, and we can include them in the pom.xml file of the studymanager project. Then, we need to update the CI/CD workflow to build based on these changes.
+### Step 1: Add artifacts to pom.xml file
+All artifacts are added as dependency on this path: `more-studymanager-backend/studymanager/pom.xml`
+```xml
+<dependency>
+    <groupId>io.redlink.more</groupId>
+    <artifactId>more-action-extension</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+<dependency>
+    <groupId>io.redlink.more</groupId>
+    <artifactId>more-trigger-extension</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+<dependency>
+    <groupId>io.redlink.more</groupId>
+    <artifactId>more-observation-extension</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+### Step 2: Adjusting pom.xml for distribution management
+Using the deploy command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In this case I decided to enable the additional repository by using a Maven profile by adding <Profiles> to pom.xml parent file. (`more-studymanager-backend/pom.xml`)
+```xml
+<profile>
+    <id>github</id>
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>lbi-dhp-more-extension-blueprint</name>
+            <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
+            <snapshots><enabled>true</enabled></snapshots>
+            <releases><enabled>true</enabled></releases>
+        </repository>
+    </repositories>
+</profile>
+```
+### Step 3: Configure Github Action
+Edit the configuration file `compile-test.yml` located at `$PROJECT_ROOT/.github/workflows/` and add `-Pgithub package --file pom.xml` parameter for run command for Compile-and-Test job as follows:
+```yaml
+Compile-and-Test:
+    name: Compile and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          server-id: github # value of repository/id field of the pom.xml
+          server-password: GITHUB_TOKEN_REF # env variable name for GitHub Personal Access Token
+      - name: Compile and test project
+        run: ./mvnw -B -U
+          --no-transfer-progress
+          compile test
+          -Pgithub package --file pom.xml
+        env:
+          GITHUB_TOKEN_REF: ${{ secrets.GITHUB_TOKEN }}
+      - name: Show 3rd-Party Licenses
+        run: |
+          cat ./studymanager/target/generated-sources/license/THIRD-PARTY.txt
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: "**/TEST-*.xml"
+      - name: Upload Licenses List
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Licenses List
+          path: "./studymanager/target/generated-sources/license/THIRD-PARTY.txt"
 ```
