@@ -4,7 +4,7 @@ and since this project relies on the `io.redlink.more:studymanager-core` artifac
 ## Publishing a package
 The following steps need to be undertaken within the more-studymanager-backend code-base project:
 ### Step 1: Prepare Distribution Management
-To make the studymanager-core project artifact available as a separate package, the distribution management configuration needs to be added to the pom.xml file of the studymanager-core project. Insert the following code snippet:
+To make the studymanager-core project artifact available as a separate packages, the distribution management configuration needs to be added to the pom.xml file of the studymanager-core project. Insert the following code snippet:
 ```xml
 <distributionManagement>
     <repository>
@@ -82,6 +82,7 @@ Now, when any change is pushed to master a new package is created and published 
 Whenever the studymanager project is built, the `studymanager-core` artifact is automatically built as well.
 The artifact is available in the packages list of `more-studymanager-backend`:
 [io.redlink.more.studymanager-core ](https://github.com/MORE-Platform/more-studymanager-backend/packages/ "io.redlink.more.studymanager-core")
+
 By following these steps, we will use the `studymanager-core` artifact in `more-extension-blueprint` and then deploy the following artifacts to GitHub Packages:
 - `more-action-extension`
 - `more-trigger-extension`
@@ -112,19 +113,19 @@ Make sure to adjust the URL in the tag according to the following pattern: https
 Using the `deploy` command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In my case I decided to enable the additional repository by using a Maven profile by adding `<Profiles>` to `POM.xml` parent file.
 ```yaml
  <profiles>
-        <profile>
-            <id>github</id>
-            <repositories>
-                <repository>
-                    <id>github</id>
-                    <name>lbi-dhp-studymanager-core</name>
-                    <url>https://maven.pkg.github.com/LBI-DHP/more-studymanager-backend</url>
-                    <snapshots><enabled>true</enabled></snapshots>
-                    <releases><enabled>true</enabled></releases>
-                </repository>
-            </repositories>
-        </profile>
-    </profiles>
+    <profile>
+        <id>github</id>
+        <repositories>
+            <repository>
+                <id>github</id>
+                <name>lbi-dhp-studymanager-core</name>
+                <url>https://maven.pkg.github.com/LBI-DHP/more-studymanager-backend</url>
+                <snapshots><enabled>true</enabled></snapshots>
+                <releases><enabled>true</enabled></releases>
+            </repository>
+        </repositories>
+    </profile>
+</profiles>
 ```
 ### Step 4: Create a Private Access Token
 You need an access token to write the package and also read other packages. You can use a personal access token (PAT) to authenticate to GitHub Packages or the GitHub API. When you create a personal access token, you can assign the token different scopes depending on your needs.
