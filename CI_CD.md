@@ -101,11 +101,11 @@ We can include it as a dependency in `more-extension-blueprint` project by the f
 To make all modules in `more-extension-blueprint` project available as a separate package, the distribution management configuration needs to be added to the pom.xml file of the `more-extension-blueprint` project. Insert the following code snippet:
 ```yaml
 <distributionManagement>
-    <repository>
-        <id>github</id>
-        <name>lbi-dhp-more-extension-blueprint</name>
-        <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
-    </repository>
+  <repository>
+    <id>github</id>
+    <name>lbi-dhp-more-extension-blueprint</name>
+    <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
+  </repository>
 </distributionManagement>
 ```
 Make sure to adjust the URL in the tag according to the following pattern: https://maven.pkg.github.com/OWNER/REPOSITORY, where OWNER is the account name of the user or organization that owns the repository, and REPOSITORY is the name of the repository housing the project.
@@ -113,18 +113,18 @@ Make sure to adjust the URL in the tag according to the following pattern: https
 Using the `deploy` command in CI/CD requires you to set up a new repository in the distributionManagement tag of the pom.xml. In my case I decided to enable the additional repository by using a Maven profile by adding `<Profiles>` to `pom.xml` parent file.
 ```yaml
 <profiles>
-    <profile>
-        <id>github</id>
-        <repositories>
-            <repository>
-                <id>github</id>
-                <name>lbi-dhp-studymanager-core</name>
-                <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
-                <snapshots><enabled>true</enabled></snapshots>
-                <releases><enabled>true</enabled></releases>
-            </repository>
-        </repositories>
-    </profile>
+  <profile>
+    <id>github</id>
+    <repositories>
+        <repository>
+          <id>github</id>
+          <name>lbi-dhp-studymanager-core</name>
+          <url>https://maven.pkg.github.com/MORE-Platform/more-studymanager-backend</url>
+          <snapshots><enabled>true</enabled></snapshots>
+          <releases><enabled>true</enabled></releases>
+        </repository>
+    </repositories>
+  </profile>
 </profiles>
 ```
 ### Step 4: Create a Private Access Token
@@ -274,3 +274,6 @@ Compile-and-Test:
           name: Licenses List
           path: "./studymanager/target/generated-sources/license/THIRD-PARTY.txt"
 ```
+## Refrences:
+- https://maurocanuto.medium.com/using-github-private-packages-and-maven-in-github-actions-c9e2ea69e2bc
+- https://www.schakko.de/2020/12/19/using-github-workflow-with-maven-dependencies-from-a-private-github-package-registry/
