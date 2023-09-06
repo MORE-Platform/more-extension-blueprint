@@ -148,6 +148,10 @@ You have to add the personal access token to your Maven`s settings.xml in .m2 fo
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                       http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <activeProfiles>
+       <activeProfile>github</activeProfile>
+    </activeProfiles>
     <servers>
         <server>
             <id>github</id>
