@@ -38,16 +38,16 @@ The studymanager-core/pom.xml file inherits from the main pom file located in th
 ```
 By making these changes, you ensure that the Maven Deploy Plugin is no longer skipped, allowing for the proper deployment of the artifact.
 ### Step 3: Configure Github Action
-Edit configuration file `compile-test.yml` under `$PROJECT_ROOT/.github/workflows/`
-The compile-and-Test job was edited and  `server-id`, `server-password` and `GITHUB_TOKEN_REF` were added.
+Edit configuration file `compile-test.yml` under `$PROJECT_ROOT/.github/workflows/`.
+The compile-and-Test and Build-and-Deploy jobs were edited and `server-id`, `server-password` and `GITHUB_TOKEN_REF` were added.
 ```yaml
 Compile-and-Test:
     name: Compile and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 17
@@ -56,7 +56,7 @@ Compile-and-Test:
       - name: Compile and test project
         run: ./mvnw -B -U
           --no-transfer-progress
-          compile test          
+          compile test
         env:
           GITHUB_TOKEN_REF: ${{ secrets.GITHUB_TOKEN }}
       - name: Show 3rd-Party Licenses
@@ -64,20 +64,67 @@ Compile-and-Test:
           cat ./studymanager/target/generated-sources/license/THIRD-PARTY.txt
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Test Results
           path: "**/TEST-*.xml"
       - name: Upload Licenses List
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Licenses List
           path: "./studymanager/target/generated-sources/license/THIRD-PARTY.txt"
+
+  Build-and-Deploy:
+    name: "Build and Push Docker Image"
+    runs-on: ubuntu-latest
+    if: contains(fromJSON('["main", "develop", "redlink", "staging"]'), github.ref_name) || github.event.inputs.dockerTag != ''
+    needs:
+      - Compile-and-Test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          server-id: github # value of repository/id field of the pom.xml
+          server-password: GITHUB_TOKEN_REF
+      - name: Generate additional Docker-Tags
+        run: |
+          TAGS=${BRANCH}
+          if [ "$BRANCH" == "$MAIN_BRANCH" ]; then
+            TAGS="latest,$TAGS"
+          fi
+          if [ -n "$EVENT_PARAM" ]; then
+            TAGS="$EVENT_PARAM"
+          fi
+          echo "Generated Docker-Tags: $TAGS"
+          echo "TAGS=$TAGS" >> "$GITHUB_ENV"
+        env:
+          BRANCH: ${{ github.ref_name }}
+          MAIN_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_PARAM: ${{ github.event.inputs.dockerTag }}
+      - name: Build JIB container and publish to GitHub Packages
+        run:
+          ./mvnw -B -U
+            --no-transfer-progress
+            clean deploy
+            -Drevision=${{github.run_number}}
+            -Dchangelist=
+            -Dsha1=.${GITHUB_SHA:0:7}
+            -Dquick
+            -Ddocker.namespace=${DOCKER_NAMESPACE,,}
+            -Djib.to.tags=${TAGS}
+            -Djib.to.auth.username=${{ github.actor }}
+            -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
+        env:
+          DOCKER_NAMESPACE: ghcr.io/${{ github.repository_owner }}
+          GITHUB_TOKEN_REF: ${{ secrets.GITHUB_TOKEN }}
 ```
 GitHub provides a token that you can use to authenticate on behalf of GitHub Actions: GITHUB_TOKEN.
 GitHub automatically creates a GITHUB_TOKEN secret to use in your workflow and you can use it to authenticate in a workflow run.
-Now, when any change is pushed to master a new package is created and published to GitHub Packages.
+Now, when any change is pushed to master a new package is created and is published to GitHub Packages.
 ## Accessing and Installing the package
 Whenever the studymanager project is built, the `studymanager-core` artifact is automatically built as well.
 The artifact is available in the packages list of `more-studymanager-backend`:
@@ -241,15 +288,15 @@ Using the deploy command in CI/CD requires you to set up a new repository in the
 </profile>
 ```
 ### Step 3: Configure Github Action
-Edit the configuration file `compile-test.yml` located at `$PROJECT_ROOT/.github/workflows/` and add `-Pgithub package --file pom.xml` parameter for run command for Compile-and-Test job as follows:
+Edit the configuration file `compile-test.yml` located at `$PROJECT_ROOT/.github/workflows/` and add `-Pgithub package --file pom.xml` parameter for run command for Compile-and-Test and Build-and-Deploy jobs as follows:
 ```yaml
 Compile-and-Test:
     name: Compile and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 17
@@ -267,16 +314,64 @@ Compile-and-Test:
           cat ./studymanager/target/generated-sources/license/THIRD-PARTY.txt
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Test Results
           path: "**/TEST-*.xml"
       - name: Upload Licenses List
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Licenses List
           path: "./studymanager/target/generated-sources/license/THIRD-PARTY.txt"
+
+Build-and-Deploy:
+    name: "Build and Push Docker Image"
+    runs-on: ubuntu-latest
+    if: contains(fromJSON('["main", "develop", "redlink", "staging"]'), github.ref_name) || github.event.inputs.dockerTag != ''
+    needs:
+      - Compile-and-Test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          server-id: github # value of repository/id field of the pom.xml
+          server-password: GITHUB_TOKEN_REF
+      - name: Generate additional Docker-Tags
+        run: |
+          TAGS=${BRANCH}
+          if [ "$BRANCH" == "$MAIN_BRANCH" ]; then
+            TAGS="latest,$TAGS"
+          fi
+          if [ -n "$EVENT_PARAM" ]; then
+            TAGS="$EVENT_PARAM"
+          fi
+          echo "Generated Docker-Tags: $TAGS"
+          echo "TAGS=$TAGS" >> "$GITHUB_ENV"
+        env:
+          BRANCH: ${{ github.ref_name }}
+          MAIN_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_PARAM: ${{ github.event.inputs.dockerTag }}
+      - name: Build JIB container and publish to GitHub Packages
+        run:
+          ./mvnw -B -U
+            --no-transfer-progress
+            clean deploy
+            -Pgithub package --file pom.xml
+            -Drevision=${{github.run_number}}
+            -Dchangelist=
+            -Dsha1=.${GITHUB_SHA:0:7}
+            -Dquick
+            -Ddocker.namespace=${DOCKER_NAMESPACE,,}
+            -Djib.to.tags=${TAGS}
+            -Djib.to.auth.username=${{ github.actor }}
+            -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
+        env:
+          DOCKER_NAMESPACE: ghcr.io/${{ github.repository_owner }}
+          GITHUB_TOKEN_REF: ${{ secrets.GITHUB_TOKEN }}
 ```
 ## Refrences:
 - https://maurocanuto.medium.com/using-github-private-packages-and-maven-in-github-actions-c9e2ea69e2bc
